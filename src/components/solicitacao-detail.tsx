@@ -25,16 +25,14 @@ import {
   Mail,
   Calendar,
   Download,
-  FileX,
-  Scale,
-  Loader2
+  FileX
 } from 'lucide-react';
-import { Solicitacao } from '../lib/types';
+import { Solicitacao, ExtractedDocumentData } from '../lib/types';
 import { useState } from 'react';
+import { ExtractedDataView } from './extracted-data-view';
 
 interface SolicitacaoDetailProps {
   solicitacao: Solicitacao;
-  onConvertToProcesso?: (solicitacao: Solicitacao) => void;
   onApprove?: (solicitacaoId: string) => void;
   onGenerateReport?: () => void;
   onRequestDocuments?: () => void;
@@ -42,14 +40,97 @@ interface SolicitacaoDetailProps {
 
 export function SolicitacaoDetail({ 
   solicitacao, 
-  onConvertToProcesso,
   onApprove,
   onGenerateReport,
   onRequestDocuments 
 }: SolicitacaoDetailProps) {
   const [notes, setNotes] = useState(solicitacao.lawyerNotes || '');
-  const [isConverting, setIsConverting] = useState(false);
-  const [showConvertDialog, setShowConvertDialog] = useState(false);
+  
+  // Mock data - Em produção, isso viria da API após análise dos documentos
+  const mockExtractedData: ExtractedDocumentData[] = [
+    {
+      documentType: 'certificado_regularidade_pesqbrasil',
+      documentName: 'Certificado_RGP.pdf',
+      extractedData: {
+        nome: solicitacao.pescador.nome,
+        cpf: solicitacao.pescador.cpf,
+        rgp: 'SP-123456',
+        atividade: 'Pesca Artesanal',
+        categoria: 'Pescador Profissional Artesanal',
+        data_emissao: '2023-01-15',
+        data_primeiro_registro: '2018-03-20',
+        situacao: 'Ativo',
+        endereco: {
+          logradouro: 'Rua dos Pescadores',
+          numero: '123',
+          bairro: 'Centro',
+          cidade: 'Santos',
+          estado: 'SP',
+          cep: '11010-100'
+        },
+        orgao_emissor: 'Ministério da Pesca e Aquicultura'
+      },
+      confidence: 95,
+      extractedAt: new Date()
+    },
+    {
+      documentType: 'cnis_meu_inss',
+      documentName: 'CNIS.pdf',
+      extractedData: {
+        nome: solicitacao.pescador.nome,
+        cpf: solicitacao.pescador.cpf,
+        nis: '120.34567.89-0',
+        categoria: 'Segurado Especial',
+        periodo_aquisitivo_defeso: true,
+        outros_vinculos: [],
+        beneficios_ativos: [],
+        data_inicio_atividade: '2018-03-20',
+        situacao_vinculo: 'Ativo'
+      },
+      confidence: 92,
+      extractedAt: new Date()
+    },
+    {
+      documentType: 'reap_2021_2024',
+      documentName: 'REAP_2021_2024.pdf',
+      extractedData: {
+        anos_verificados: [2021, 2022, 2023, 2024],
+        anos_faltando: [],
+        completo: true
+      },
+      confidence: 98,
+      extractedAt: new Date()
+    },
+    {
+      documentType: 'termo_representacao_procuracao',
+      documentName: 'Termo_Procuracao.pdf',
+      extractedData: {
+        nome_pescador: solicitacao.pescador.nome,
+        advogados: ['Dr. João Silva - OAB/SP 123.456', 'Dra. Maria Santos - OAB/SP 789.012'],
+        assinatura_pescador: true,
+        data_emissao: '2024-10-15',
+        validade: '2025-10-15',
+        orgao_emissor: 'Cartório 1º Ofício - Santos/SP'
+      },
+      confidence: 88,
+      extractedAt: new Date()
+    },
+    {
+      documentType: 'biometria_tse',
+      documentName: 'Biometria_TSE.pdf',
+      extractedData: {
+        nome: solicitacao.pescador.nome,
+        cpf: solicitacao.pescador.cpf,
+        titulo_eleitor: '1234 5678 9012',
+        municipio: 'Santos',
+        estado: 'SP',
+        biometria_coletada: true,
+        data_emissao: '2024-01-10'
+      },
+      confidence: 94,
+      extractedAt: new Date()
+    }
+  ];
   const [showApproveDialog, setShowApproveDialog] = useState(false);
 
   const getStatusBadge = () => {
@@ -89,18 +170,6 @@ export function SolicitacaoDetail({
     }
   };
 
-  const handleConvertToProcesso = async () => {
-    if (onConvertToProcesso) {
-      setShowConvertDialog(false);
-      setIsConverting(true);
-      // Simula delay de conversão
-      setTimeout(() => {
-        onConvertToProcesso(solicitacao);
-        setIsConverting(false);
-      }, 1500);
-    }
-  };
-
   return (
     <div className="space-y-4 md:space-y-6">
       {/* Header Card */}
@@ -129,27 +198,6 @@ export function SolicitacaoDetail({
                 </Button>
               )}
               
-              {/* Botão de Abrir Processo - Aparece apenas para aprovadas */}
-              {solicitacao.status === 'aprovada' && onConvertToProcesso && (
-                <Button 
-                  onClick={() => setShowConvertDialog(true)}
-                  className="bg-purple-600 hover:bg-purple-700"
-                  disabled={isConverting}
-                >
-                  {isConverting ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Convertendo...
-                    </>
-                  ) : (
-                    <>
-                      <Scale className="h-4 w-4 mr-2" />
-                      Abrir Processo
-                    </>
-                  )}
-                </Button>
-              )}
-              
               {onGenerateReport && (
                 <Button variant="outline" onClick={onGenerateReport}>
                   <Download className="h-4 w-4 mr-2" />
@@ -162,8 +210,9 @@ export function SolicitacaoDetail({
       </Card>
 
       <Tabs defaultValue="analysis" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="analysis">Análise IA</TabsTrigger>
+          <TabsTrigger value="extracted">Dados Extraídos</TabsTrigger>
           <TabsTrigger value="pescador">Pescador</TabsTrigger>
           <TabsTrigger value="documents">Documentos ({solicitacao.documents.length})</TabsTrigger>
         </TabsList>
@@ -354,6 +403,11 @@ export function SolicitacaoDetail({
           </Card>
         </TabsContent>
 
+        {/* Aba de Dados Extraídos */}
+        <TabsContent value="extracted" className="space-y-4">
+          <ExtractedDataView extractedData={mockExtractedData} />
+        </TabsContent>
+
         {/* Aba do Pescador */}
         <TabsContent value="pescador" className="space-y-4">
           <Card>
@@ -500,40 +554,6 @@ export function SolicitacaoDetail({
               className="bg-green-600 hover:bg-green-700"
             >
               Sim, Aprovar
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Dialog de Confirmação de Conversão */}
-      <AlertDialog open={showConvertDialog} onOpenChange={setShowConvertDialog}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle className="flex items-center gap-2">
-              <Scale className="h-5 w-5 text-purple-600" />
-              Abrir Processo Judicial
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Você está prestes a converter esta solicitação em um processo judicial. 
-              Esta ação irá:
-              <ul className="mt-2 space-y-1 list-disc list-inside">
-                <li>Criar um novo processo no sistema</li>
-                <li>Gerar um número de processo automaticamente</li>
-                <li>Transferir todos os documentos para o processo</li>
-                <li>Manter a referência à solicitação original</li>
-              </ul>
-              <p className="mt-3 font-medium">
-                Deseja continuar?
-              </p>
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction 
-              onClick={handleConvertToProcesso}
-              className="bg-purple-600 hover:bg-purple-700"
-            >
-              Sim, Abrir Processo
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

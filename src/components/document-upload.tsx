@@ -27,13 +27,16 @@ interface DocumentSlot {
 }
 
 const initialDocumentSlots: Omit<DocumentSlot, 'file' | 'status'>[] = [
-  { type: 'rg', label: 'RG (Registro Geral)', required: true },
-  { type: 'cpf', label: 'CPF', required: true },
-  { type: 'rgp', label: 'Registro Geral da Pesca (RGP)', required: true },
-  { type: 'comprovante_residencia', label: 'Comprovante de Residência', required: true },
-  { type: 'declaracao_colonia', label: 'Declaração da Colônia', required: true },
-  { type: 'comprovante_venda', label: 'Comprovante de Venda de Pescado', required: false },
-  { type: 'carteira_trabalho', label: 'Carteira de Trabalho', required: false },
+  { type: 'certificado_regularidade_pesqbrasil', label: 'Certificado de Regularidade – PesqBrasil', required: true },
+  { type: 'caepf_ecac', label: 'CAEPF – E-CAC', required: true },
+  { type: 'declaracao_residencia', label: 'Declaração de Residência (Assinado pelo Pescador)', required: true },
+  { type: 'cnis_meu_inss', label: 'CNIS – Meu INSS', required: true },
+  { type: 'termo_representacao_procuracao', label: 'Termo de Representação e Procuração (Assinado)', required: true },
+  { type: 'gps_comprovante_esocial', label: 'GPS e Comprovante de GPS – E-Social', required: true },
+  { type: 'biometria_tse', label: 'Biometria – Site TSE', required: true },
+  { type: 'novo_cin_cpf', label: 'Novo CIN (Identidade) e CPF', required: true },
+  { type: 'oab_advogados', label: 'OAB Advogados (Responsabilidade do Escritório)', required: false },
+  { type: 'reap_2021_2024', label: 'REAP 2021-2024 – PesqBrasil', required: true },
 ];
 
 export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
@@ -44,9 +47,9 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Simula a IA identificando o tipo de documento através de OCR/Análise de conteúdo
-  const identifyDocumentTypeByAI = async (file: File): Promise<DocumentType | null> => {
-    // Simula delay de processamento OCR/IA (1-3 segundos)
-    const delay = 1000 + Math.random() * 2000;
+  const identifyDocumentTypeByAI = async (file: File, currentSlots: DocumentSlot[]): Promise<DocumentType | null> => {
+    // Simula delay de processamento OCR/IA (mais rápido para demonstração)
+    const delay = 500 + Math.random() * 1000; // 0.5-1.5 segundos
     await new Promise(resolve => setTimeout(resolve, delay));
     
     // Em produção, aqui seria enviado para API de OCR/IA
@@ -55,130 +58,153 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
     
     // Simulação: A IA "analisa o conteúdo" e identifica
     // Em produção, isso seria baseado no conteúdo real do documento
-    if (lowerName.includes('rg') && !lowerName.includes('rgp')) return 'rg';
-    if (lowerName.includes('cpf')) return 'cpf';
-    if (lowerName.includes('rgp') || lowerName.includes('pesca')) return 'rgp';
-    if (lowerName.includes('residencia') || lowerName.includes('comprovante')) return 'comprovante_residencia';
-    if (lowerName.includes('colonia') || lowerName.includes('declaracao')) return 'declaracao_colonia';
-    if (lowerName.includes('venda') || lowerName.includes('pescado')) return 'comprovante_venda';
-    if (lowerName.includes('carteira') || lowerName.includes('trabalho') || lowerName.includes('ctps')) return 'carteira_trabalho';
+    if (lowerName.includes('certificado') && lowerName.includes('regularidade')) return 'certificado_regularidade_pesqbrasil';
+    if (lowerName.includes('pesqbrasil') && lowerName.includes('certificado')) return 'certificado_regularidade_pesqbrasil';
+    if (lowerName.includes('caepf')) return 'caepf_ecac';
+    if (lowerName.includes('ecac')) return 'caepf_ecac';
+    if (lowerName.includes('declaracao') && lowerName.includes('residencia')) return 'declaracao_residencia';
+    if (lowerName.includes('residencia') && lowerName.includes('assinado')) return 'declaracao_residencia';
+    if (lowerName.includes('cnis')) return 'cnis_meu_inss';
+    if (lowerName.includes('inss')) return 'cnis_meu_inss';
+    if (lowerName.includes('termo') && (lowerName.includes('representacao') || lowerName.includes('procuracao'))) return 'termo_representacao_procuracao';
+    if (lowerName.includes('procuracao')) return 'termo_representacao_procuracao';
+    if (lowerName.includes('gps')) return 'gps_comprovante_esocial';
+    if (lowerName.includes('esocial')) return 'gps_comprovante_esocial';
+    if (lowerName.includes('biometria')) return 'biometria_tse';
+    if (lowerName.includes('tse')) return 'biometria_tse';
+    if (lowerName.includes('cin') || (lowerName.includes('identidade') && lowerName.includes('cpf'))) return 'novo_cin_cpf';
+    if (lowerName.includes('oab')) return 'oab_advogados';
+    if (lowerName.includes('reap')) return 'reap_2021_2024';
+    if (lowerName.includes('relatorio') && lowerName.includes('atividade')) return 'reap_2021_2024';
     
-    // Se não conseguir identificar pelo nome, tenta identificar pelos documentos faltantes
-    const emptySlots = documentSlots.filter(s => s.status === 'empty');
+    // Para qualquer outro arquivo: preenche automaticamente os slots vazios obrigatórios
+    const emptySlots = currentSlots.filter(s => s.status === 'empty');
     if (emptySlots.length > 0) {
-      // Retorna o primeiro slot vazio obrigatório, ou o primeiro vazio
+      // Prioriza slots obrigatórios vazios
       const requiredEmpty = emptySlots.find(s => s.required);
       return requiredEmpty ? requiredEmpty.type : emptySlots[0].type;
     }
     
-    return null;
+    // Se todos os slots estão preenchidos, substitui o último obrigatório
+    const requiredSlots = currentSlots.filter(s => s.required);
+    return requiredSlots.length > 0 ? requiredSlots[requiredSlots.length - 1].type : null;
   };
 
   const processFiles = async (files: FileList | File[]) => {
     const fileArray = Array.from(files);
     
-    // Validação inicial
-    for (const file of fileArray) {
-      const validTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
-      if (!validTypes.includes(file.type)) {
-        toast.error(`Arquivo ${file.name} tem formato inválido. Use PDF, JPG ou PNG.`);
-        continue;
-      }
+    // Processa todos os arquivos de forma mais simples
+    for (let i = 0; i < fileArray.length; i++) {
+      const file = fileArray[i];
+      
+      // Aguarda processamento completo do arquivo
+      await processOneFile(file);
+      
+      // Pequeno delay entre arquivos
+      await new Promise(resolve => setTimeout(resolve, 200));
+    }
+  };
 
-      // Encontra um slot vazio temporário para mostrar estado de "identificando"
-      const tempSlots = documentSlots.filter(s => s.status === 'empty');
-      if (tempSlots.length === 0) {
-        toast.warning('Todos os slots de documentos já estão preenchidos');
-        continue;
-      }
-
-      // Marca como "identificando" no primeiro slot vazio
-      const tempSlot = tempSlots[0];
-      setDocumentSlots(prev => prev.map(slot => 
-        slot.type === tempSlot.type 
-          ? { ...slot, status: 'identifying', fileName: file.name }
-          : slot
-      ));
-
-      toast.info(`Analisando: ${file.name}...`, {
-        icon: <Sparkles className="h-4 w-4" />,
-      });
-
-      // IA identifica o tipo do documento
-      try {
-        const identifiedType = await identifyDocumentTypeByAI(file);
-
-        if (!identifiedType) {
-          // Se não conseguiu identificar, marca como erro
-          setDocumentSlots(prev => prev.map(slot => 
-            slot.type === tempSlot.type 
-              ? { 
-                  ...slot, 
-                  status: 'error', 
-                  errorMessage: 'Não foi possível identificar o tipo do documento',
-                  fileName: undefined 
-                }
-              : slot
-          ));
-          toast.error(`Não foi possível identificar: ${file.name}`);
-          continue;
+  const processOneFile = (file: File): Promise<void> => {
+    return new Promise((resolve) => {
+      // Passo 1: Captura estado atual
+      setDocumentSlots(prevSlots => {
+        const emptySlots = prevSlots.filter(s => s.status === 'empty');
+        if (emptySlots.length === 0) {
+          toast.warning('Todos os slots de documentos já estão preenchidos');
+          resolve();
+          return prevSlots;
         }
 
-        // Atualiza o slot correto com o tipo identificado
-        setDocumentSlots(prev => {
-          const updatedSlots = prev.map(slot => {
-            // Limpa o slot temporário
-            if (slot.type === tempSlot.type && slot.status === 'identifying') {
-              return { ...slot, status: 'empty', fileName: undefined };
-            }
-            // Preenche o slot correto
-            if (slot.type === identifiedType) {
-              if (slot.status === 'filled') {
-                toast.warning(`Substituindo documento em: ${slot.label}`);
-              }
-              return {
-                ...slot,
-                file,
-                status: 'filled',
-                errorMessage: undefined,
-                fileName: file.name,
-              };
-            }
-            return slot;
-          });
-
-          // Notifica o componente pai
-          const uploadedDocs: UploadedDocument[] = updatedSlots
-            .filter(slot => slot.file)
-            .map(slot => ({
-              type: slot.type,
-              name: slot.file!.name,
-              file: slot.file!,
-            }));
-          onDocumentsChange(uploadedDocs);
-
-          return updatedSlots;
+        const tempSlot = emptySlots[0];
+        
+        toast.info(`Analisando: ${file.name}...`, {
+          icon: <Sparkles className="h-4 w-4" />,
         });
 
-        const identifiedSlot = documentSlots.find(s => s.type === identifiedType);
-        toast.success(`✓ ${identifiedSlot?.label} identificado`, {
-          icon: <CheckCircle2 className="h-4 w-4" />,
-        });
-
-      } catch (error) {
-        setDocumentSlots(prev => prev.map(slot => 
+        // Passo 2: Marca como identificando
+        const slotsIdentifying = prevSlots.map(slot => 
           slot.type === tempSlot.type 
-            ? { 
-                ...slot, 
-                status: 'error', 
-                errorMessage: 'Erro ao processar documento',
-                fileName: undefined 
-              }
+            ? { ...slot, status: 'identifying' as const, fileName: file.name }
             : slot
-        ));
-        toast.error(`Erro ao processar: ${file.name}`);
-      }
-    }
+        );
+
+        // Passo 3: Inicia identificação assíncrona
+        (async () => {
+          try {
+            const identifiedType = await identifyDocumentTypeByAI(file, slotsIdentifying);
+
+            if (!identifiedType) {
+              setDocumentSlots(prev => prev.map(slot => 
+                slot.type === tempSlot.type && slot.status === 'identifying'
+                  ? { ...slot, status: 'error' as const, errorMessage: 'Não identificado', fileName: undefined }
+                  : slot
+              ));
+              toast.error(`Não foi possível identificar: ${file.name}`);
+              resolve();
+              return;
+            }
+
+            // Passo 4: Atualiza com o documento identificado
+            setDocumentSlots(prev => {
+              const newSlots = prev.map(slot => {
+                // Limpa slot temporário
+                if (slot.type === tempSlot.type && slot.status === 'identifying') {
+                  return { ...slot, status: 'empty' as const, fileName: undefined };
+                }
+                // Preenche slot correto
+                if (slot.type === identifiedType) {
+                  if (slot.status === 'filled') {
+                    toast.warning(`Substituindo: ${slot.label}`);
+                  }
+                  return {
+                    ...slot,
+                    file,
+                    status: 'filled' as const,
+                    errorMessage: undefined,
+                    fileName: file.name,
+                  };
+                }
+                return slot;
+              });
+
+              // Passo 5: Notifica componente pai
+              const uploadedDocs: UploadedDocument[] = newSlots
+                .filter(s => s.file)
+                .map(s => ({
+                  type: s.type,
+                  name: s.file!.name,
+                  file: s.file!,
+                }));
+              
+              onDocumentsChange(uploadedDocs);
+
+              // Toast de sucesso
+              const identifiedSlot = newSlots.find(s => s.type === identifiedType);
+              if (identifiedSlot) {
+                toast.success(`✓ ${identifiedSlot.label}`, {
+                  icon: <CheckCircle2 className="h-4 w-4" />,
+                });
+              }
+
+              resolve();
+              return newSlots;
+            });
+
+          } catch (error) {
+            setDocumentSlots(prev => prev.map(slot => 
+              slot.type === tempSlot.type && slot.status === 'identifying'
+                ? { ...slot, status: 'error' as const, errorMessage: 'Erro ao processar', fileName: undefined }
+                : slot
+            ));
+            toast.error(`Erro: ${file.name}`);
+            resolve();
+          }
+        })();
+
+        return slotsIdentifying;
+      });
+    });
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -238,10 +264,10 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
           <Sparkles className="h-5 w-5 text-white" />
         </div>
         <div>
-          <h2 className="text-2xl mb-2">Documentos</h2>
+          <h2 className="text-2xl mb-2">Documentos do Seguro-Defeso</h2>
           <p className="text-muted-foreground">
-            Faça upload dos documentos em qualquer ordem. Nossa IA com OCR identificará automaticamente o tipo de cada documento, 
-            independentemente do nome do arquivo.
+            <strong>Envie todos os documentos de uma vez!</strong> Você pode selecionar ou arrastar múltiplos arquivos simultaneamente. 
+            Nossa IA com OCR identificará automaticamente o tipo de cada documento e extrairá os dados do pescador (CPF, RG, endereço, colônia, etc.).
           </p>
         </div>
       </div>
@@ -264,7 +290,7 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
           ref={fileInputRef}
           type="file"
           multiple
-          accept=".pdf,.jpg,.jpeg,.png"
+          accept="*/*"
           onChange={handleFileInputChange}
           className="hidden"
         />
@@ -279,7 +305,7 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
               <span className="text-cyan-600 dark:text-cyan-400">Clique para selecionar</span> ou arraste os arquivos aqui
             </p>
             <p className="text-sm text-muted-foreground">
-              Formatos aceitos: PDF, JPG, PNG • Múltiplos arquivos permitidos
+              📤 Envie <strong>vários documentos de uma vez</strong> • Aceita qualquer tipo de arquivo • IA identifica automaticamente
             </p>
           </div>
         </div>
@@ -287,7 +313,19 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
 
       {/* Grid de Slots de Documentos */}
       <div>
-        <h3 className="mb-4">Status dos Documentos</h3>
+        <div className="flex items-center justify-between mb-4">
+          <h3>Status dos Documentos</h3>
+          <div className="flex items-center gap-2">
+            <Badge variant="outline" className="text-sm">
+              {documentSlots.filter(s => s.status === 'filled').length} / {documentSlots.filter(s => s.required).length} obrigatórios
+            </Badge>
+            {documentSlots.filter(s => s.status === 'filled' && s.required).length === documentSlots.filter(s => s.required).length && (
+              <Badge className="bg-green-600 text-sm">
+                ✓ Documentos obrigatórios completos
+              </Badge>
+            )}
+          </div>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documentSlots.map((slot) => (
             <Card
@@ -368,14 +406,14 @@ export function DocumentUpload({ onDocumentsChange }: DocumentUploadProps) {
         <Sparkles className="h-5 w-5 text-cyan-600 dark:text-cyan-400 flex-shrink-0 mt-0.5" />
         <div className="text-sm text-cyan-900 dark:text-cyan-300">
           <p className="mb-2">
-            <strong>🤖 Identificação Automática com IA</strong>
+            <strong>🤖 Sistema Mockado para Demonstração</strong>
           </p>
           <p className="text-cyan-700 dark:text-cyan-400 mb-1">
-            Nossa tecnologia de OCR (Reconhecimento Ótico de Caracteres) analisa o <strong>conteúdo</strong> de cada documento 
-            para identificar automaticamente seu tipo, independentemente do nome do arquivo.
+            Este sistema aceita <strong>qualquer arquivo</strong> do seu computador para demonstração. 
+            A IA simulada identifica automaticamente o tipo de documento e preenche os slots necessários.
           </p>
           <p className="text-cyan-600 dark:text-cyan-500 text-xs">
-            💡 Você pode fazer upload de todos os documentos de uma só vez, sem se preocupar com organização prévia!
+            💡 Arraste 9 arquivos quaisquer para preencher todos os documentos obrigatórios. Não precisa ser documento real.
           </p>
         </div>
       </div>

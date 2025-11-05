@@ -1,13 +1,16 @@
 // Tipos de dados do sistema
 
 export type DocumentType = 
-  | 'rg'
-  | 'cpf'
-  | 'rgp'
-  | 'comprovante_residencia'
-  | 'declaracao_colonia'
-  | 'comprovante_venda'
-  | 'carteira_trabalho'
+  | 'certificado_regularidade_pesqbrasil'
+  | 'caepf_ecac'
+  | 'declaracao_residencia'
+  | 'cnis_meu_inss'
+  | 'termo_representacao_procuracao'
+  | 'gps_comprovante_esocial'
+  | 'biometria_tse'
+  | 'novo_cin_cpf'
+  | 'oab_advogados'
+  | 'reap_2021_2024'
   | 'outros';
 
 export type CaseStatus = 
@@ -169,4 +172,113 @@ export interface Notification {
   isRead: boolean;
   createdAt: Date;
   priority: 'low' | 'medium' | 'high';
+}
+
+// DTOs - Dados Extraídos dos Documentos pela IA
+export interface RGPDTO {
+  nome?: string;
+  cpf?: string;
+  rgp?: number | string;
+  atividade?: string;
+  categoria?: string;
+  data_emissao?: string; // YYYY-MM-DD
+  data_primeiro_registro?: string; // YYYY-MM-DD
+  situacao?: string;
+  endereco?: Record<string, any>;
+  orgao_emissor?: string;
+}
+
+export interface CAEPFDTO {
+  nome?: string;
+  cpf?: string;
+  caepf?: number | string;
+  data_inscricao?: string; // YYYY-MM-DD
+  situacao?: string;
+  atividade_principal?: string;
+  codigo_cnae?: string;
+  endereco?: Record<string, any>;
+  municipio?: string;
+  estado?: string;
+  orgao_emissor?: string;
+}
+
+export interface ComprovanteResidenciaDTO {
+  nome?: string;
+  cpf?: string;
+  endereco?: Record<string, any>;
+  data_emissao?: string; // YYYY-MM-DD
+  entidade_emissora?: string;
+  tipo_documento?: string;
+}
+
+export interface CNISDTO {
+  nome?: string;
+  cpf?: string;
+  nis?: string;
+  categoria?: string;
+  periodo_aquisitivo_defeso?: boolean;
+  outros_vinculos?: string[];
+  beneficios_ativos?: string[];
+  data_inicio_atividade?: string; // YYYY-MM-DD
+  data_fim_atividade?: string; // YYYY-MM-DD
+  situacao_vinculo?: string;
+}
+
+export interface TermoRepresentacaoDTO {
+  nome_pescador?: string;
+  advogados?: string[];
+  assinatura_pescador?: boolean;
+  data_emissao?: string; // YYYY-MM-DD
+  validade?: string; // YYYY-MM-DD
+  orgao_emissor?: string;
+}
+
+export interface GPSDTO {
+  nome?: string;
+  cpf?: string;
+  codigo_pagamento?: string;
+  competencia?: string; // MM/YYYY
+  valor_pago?: number;
+  data_pagamento?: string; // YYYY-MM-DD
+  banco?: string;
+  periodo_apuracao?: string;
+}
+
+export interface BiometriaDTO {
+  nome?: string;
+  cpf?: string;
+  titulo_eleitor?: string;
+  municipio?: string;
+  estado?: string;
+  biometria_coletada?: boolean;
+  data_emissao?: string; // YYYY-MM-DD
+}
+
+export interface DocumentoIdentidadeDTO {
+  nome?: string;
+  cpf?: string;
+  documento_existe?: boolean;
+}
+
+export interface REAPDTO {
+  anos_verificados?: number[];
+  anos_faltando?: number[];
+  completo?: boolean;
+}
+
+export interface ExtractedDocumentData {
+  documentType: DocumentType;
+  documentName: string;
+  extractedData: 
+    | RGPDTO 
+    | CAEPFDTO 
+    | ComprovanteResidenciaDTO 
+    | CNISDTO 
+    | TermoRepresentacaoDTO 
+    | GPSDTO 
+    | BiometriaDTO 
+    | DocumentoIdentidadeDTO 
+    | REAPDTO;
+  confidence: number; // 0-100
+  extractedAt: Date;
 }

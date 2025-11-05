@@ -43,13 +43,15 @@ Fase posterior onde são acompanhados os processos judiciais já ajuizados.
    │
    ▼
 ┌─────────────────────┐
-│ Abrir Processo      │  ← Advogado converte em processo judicial
-└──────────┬──────────┘
+│ Solicitação         │  
+│ Aprovada            │  ← Advogado pode exportar relatório
+└─────────────────────┘
            │
+           │ (Processo judicial aberto externamente)
            ▼
 ┌─────────────────────┐
-│  Processo Criado    │  ← Número de processo gerado
-│  (Em Andamento)     │  ← Acompanhamento de movimentações
+│  Cadastro Manual    │  ← Advogado cadastra processo no sistema
+│  de Processo        │  ← Para acompanhamento de movimentações
 └─────────────────────┘
            │
            ▼
@@ -151,8 +153,8 @@ Fase posterior onde são acompanhados os processos judiciais já ajuizados.
 ### 1.5 Ações Disponíveis
 
 **Para solicitações aprovadas:**
-- 🟣 **Abrir Processo** - Converte em processo judicial
 - 📄 **Exportar Relatório** - Gera arquivo .txt com análise completa
+- ℹ️ **Nota**: Processos judiciais são abertos externamente e cadastrados manualmente na aba "Processos"
 
 **Para solicitações com docs incompletos:**
 - 📧 **Gerar Carta de Solicitação** - Documento para pedir docs ao cliente
@@ -165,16 +167,12 @@ Fase posterior onde são acompanhados os processos judiciais já ajuizados.
 
 **Quando:** Solicitação com status "Aprovada"
 
-**Processo:**
-1. Abrir detalhes da solicitação aprovada
-2. Clicar em "Abrir Processo"
-3. Confirmar no diálogo
-4. Sistema automaticamente:
-   - Cria novo processo
-   - Gera número de processo judicial
-   - Transfere todos os documentos
-   - Define tribunal (TJSP por padrão)
-   - Registra referência à solicitação original
+**Observação:**
+- Processos judiciais são abertos externamente ao sistema
+- Após abertura do processo na justiça, o advogado pode:
+  1. Exportar o relatório da solicitação para usar como base
+  2. Cadastrar manualmente o processo na aba "Processos" para acompanhamento
+  3. Vincular os documentos da solicitação ao processo
    - Define status inicial como "Em Andamento"
 
 ### 2.2 Visualizar Processo
@@ -431,7 +429,7 @@ Fase posterior onde são acompanhados os processos judiciais já ajuizados.
    - Notificação quando concluir
 
 4. **Avaliar Resultado**
-   - Se aprovado → abrir processo
+   - Se aprovado → exportar relatório e abrir processo externamente
    - Se incompleto → solicitar documentos
    - Se reprovado → informar cliente
 

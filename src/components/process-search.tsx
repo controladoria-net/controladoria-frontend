@@ -318,7 +318,7 @@ export function ProcessSearch({ onProcessFound, isAnalyzing }: ProcessSearchProp
                 ) : (
                   <>
                     <CheckCircle2 className="h-4 w-4 mr-2" />
-                    Adicionar aos Meus Casos
+                    Adicionar aos Processos
                   </>
                 )}
               </Button>

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Button } from './ui/button';
-import { Search, Filter, SortAsc, Scale } from 'lucide-react';
+import { Search, Filter, SortAsc, Scale, Plus } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -10,24 +10,35 @@ import {
   SelectTrigger,
   SelectValue,
 } from './ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from './ui/dialog';
 import { ProcessosTable } from './processos-table';
+import { ProcessSearch } from './process-search';
 import { Processo, ProcessoStatus } from '../lib/types';
 
 interface AllProcessosProps {
   processos: Processo[];
   onViewProcesso: (id: string) => void;
+  onAddProcessByNumber?: (processData: any) => void;
 }
 
 type SortField = 'data' | 'nome' | 'numero' | 'ultima_mov' | 'movimentacoes';
 type SortOrder = 'asc' | 'desc';
 
-export function AllProcessos({ processos, onViewProcesso }: AllProcessosProps) {
+export function AllProcessos({ processos, onViewProcesso, onAddProcessByNumber }: AllProcessosProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<ProcessoStatus | 'all'>('all');
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'baixa' | 'media' | 'alta'>('all');
   const [sortField, setSortField] = useState<SortField>('data');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [currentPage, setCurrentPage] = useState(1);
+  const [showAddDialog, setShowAddDialog] = useState(false);
+  const [isAdding, setIsAdding] = useState(false);
   const itemsPerPage = 10;
 
   // Filtrar e ordenar
@@ -86,6 +97,19 @@ export function AllProcessos({ processos, onViewProcesso }: AllProcessosProps) {
     indeferidos: processos.filter((p) => p.status === 'indeferido').length,
   };
 
+  const handleProcessFound = (processData: any) => {
+    setIsAdding(true);
+    
+    // Simula adicionar processo
+    setTimeout(() => {
+      if (onAddProcessByNumber) {
+        onAddProcessByNumber(processData);
+      }
+      setIsAdding(false);
+      setShowAddDialog(false);
+    }, 1000);
+  };
+
   return (
     <div className="space-y-4">
       {/* Estatísticas */}
@@ -125,10 +149,20 @@ export function AllProcessos({ processos, onViewProcesso }: AllProcessosProps) {
       {/* Filtros */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Scale className="h-5 w-5" />
-            Todos os Processos
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              Todos os Processos
+            </CardTitle>
+            <Button 
+              onClick={() => setShowAddDialog(true)}
+              className="bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-700 hover:to-blue-700"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              <span className="hidden sm:inline">Adicionar por Número</span>
+              <span className="sm:hidden">Adicionar</span>
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -255,6 +289,22 @@ export function AllProcessos({ processos, onViewProcesso }: AllProcessosProps) {
           </Button>
         </div>
       )}
+
+      {/* Dialog para adicionar processo por número */}
+      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scale className="h-5 w-5" />
+              Adicionar Processo por Número
+            </DialogTitle>
+            <DialogDescription>
+              Digite o número do processo judicial para importar automaticamente os dados dos sistemas do tribunal.
+            </DialogDescription>
+          </DialogHeader>
+          <ProcessSearch onProcessFound={handleProcessFound} isAnalyzing={isAdding} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

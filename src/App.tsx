@@ -137,6 +137,41 @@ export default function App() {
     toast.success(`Processo ${novoProcesso.numeroProcesso} criado com sucesso!`);
   };
 
+  const handleAddProcessByNumber = (processData: any) => {
+    // Criar novo processo a partir dos dados do tribunal
+    const novoProcesso: Processo = {
+      id: `pr${Date.now()}`,
+      pescador: {
+        id: `p${Date.now()}`,
+        nome: processData.partes.autor || '',
+        cpf: processData.partes.cpf || '',
+        rg: '',
+        dataNascimento: new Date(),
+        endereco: '',
+        colonia: '',
+        telefone: '',
+      },
+      status: 'em_andamento',
+      documents: [],
+      numeroProcesso: processData.numeroProcesso,
+      tribunal: processData.tribunal,
+      orgaoJulgador: processData.orgaoJulgador,
+      classeProcessual: processData.classeProcessual,
+      assunto: processData.assunto,
+      situacao: processData.situacao,
+      dataAjuizamento: processData.dataAjuizamento,
+      movimentacoes: processData.movimentacoes,
+      ultimaMovimentacao: processData.ultimaMovimentacao,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      priority: 'media',
+      lawyerNotes: `Processo importado automaticamente em ${new Date().toLocaleDateString('pt-BR')}`,
+    };
+
+    setProcessos([novoProcesso, ...processos]);
+    toast.success(`Processo ${novoProcesso.numeroProcesso} adicionado com sucesso!`);
+  };
+
   const handleNewSolicitacao = async (pescador: Pescador, documents: UploadedDocument[]) => {
     setIsAnalyzing(true);
     toast.info('Iniciando análise de documentos...');
@@ -410,7 +445,11 @@ export default function App() {
                   </p>
                 </div>
 
-                <AllProcessos processos={processos} onViewProcesso={handleViewProcesso} />
+                <AllProcessos 
+                  processos={processos} 
+                  onViewProcesso={handleViewProcesso}
+                  onAddProcessByNumber={handleAddProcessByNumber}
+                />
               </div>
             )}
 
@@ -455,7 +494,6 @@ export default function App() {
 
                 <SolicitacaoDetail 
                   solicitacao={solicitacoes.find(s => s.id === selectedSolicitacaoId)!}
-                  onConvertToProcesso={handleConvertToProcesso}
                   onApprove={handleApproveSolicitacao}
                   onGenerateReport={() => {
                     const sol = solicitacoes.find(s => s.id === selectedSolicitacaoId);
