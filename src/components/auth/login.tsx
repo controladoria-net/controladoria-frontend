@@ -10,8 +10,9 @@ import {
   CardTitle,
 } from '../ui/card';
 import { Eye, EyeOff, Scale, Loader2 } from 'lucide-react';
-import { toast } from 'sonner@2.0.3';
+import { toast } from 'sonner';
 import logoImage from 'figma:asset/80fc1f1e9ee50b88e65b40f85f7f2f310a0875da.png';
+import { api, extractApiErrorMessage } from '../../services/api';
 
 interface LoginProps {
   onLoginSuccess: (user: { email: string; name: string }) => void;
@@ -34,20 +35,26 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
 
     setIsLoading(true);
 
-    // Simula requisição de login
-    setTimeout(() => {
-      // Mock: Aceita qualquer email/senha para demonstração
-      const mockUser = {
-        email,
-        name:
-          email.split('@')[0].charAt(0).toUpperCase() +
-          email.split('@')[0].slice(1),
-      };
+    try {
+      // O backend usa cookies HttpOnly, então apenas precisamos postar as credenciais
+      // Assumindo campo username para compatibilidade; ajuste para { email, password } se necessário
+      await api.post('/session/login', { username: email, password });
 
-      toast.success(`Bem-vindo, ${mockUser.name}!`);
-      onLoginSuccess(mockUser);
+      // Buscar o usuário autenticado para popular o header
+      const userResp = await api.get('/session/user');
+      const u = (userResp?.data as any)?.data;
+      const nameParts = [u?.first_name, u?.last_name].filter(Boolean);
+      const friendlyName = nameParts.length > 0 ? nameParts.join(' ') : (u?.username || email);
+
+      const userForApp = { email: u?.email || email, name: friendlyName };
+      toast.success(`Bem-vindo, ${userForApp.name}!`);
+      onLoginSuccess(userForApp);
+    } catch (err) {
+      // Toast vermelho em caso de erro no login
+      toast.error(extractApiErrorMessage(err));
+    } finally {
       setIsLoading(false);
-    }, 1500);
+    }
   };
 
   return (

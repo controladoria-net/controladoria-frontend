@@ -34,6 +34,7 @@ import { downloadSolicitacaoReport, downloadProcessoReport, downloadDocumentRequ
 import { toast } from 'sonner';
 import { Toaster } from './components/ui/sonner';
 import { Badge } from './components/ui/badge';
+import { api, ApiService } from './services/api';
 
 type View = 'dashboard' | 'solicitacoes' | 'processos' | 'new-solicitacao' | 'solicitacao-detail' | 'processo-detail' | 'knowledge-base';
 type AuthView = 'login' | 'forgot-password' | 'reset-password';
@@ -57,20 +58,45 @@ export default function App() {
   const [notifications, setNotifications] = useState<Notification[]>(mockNotifications);
   const [showNotifications, setShowNotifications] = useState(false);
 
-  // Verificar se há usuário salvo no localStorage
+  // Configurar handler global para sessão expirada e tentar descobrir sessão ativa via cookie
   useEffect(() => {
-    const savedUser = localStorage.getItem('seguroDefeso_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
+    ApiService.setOnUnauthorized(() => {
+      setUser(null);
+      setAuthView('login');
+      localStorage.removeItem('seguroDefeso_user');
+      toast.error('Sua sessão expirou. Faça login novamente.');
+    });
+
+    // Tentar obter o usuário autenticado ao carregar a aplicação
+    (async () => {
+      try {
+        const userResp = await api.get('/session/user');
+        const u = (userResp?.data as any)?.data;
+        if (u) {
+          const nameParts = [u.first_name, u.last_name].filter(Boolean);
+          const friendlyName = nameParts.length > 0 ? nameParts.join(' ') : (u.username || u.email);
+          const userForApp: User = { email: u.email, name: friendlyName };
+          setUser(userForApp);
+          localStorage.setItem('seguroDefeso_user', JSON.stringify(userForApp));
+        }
+      } catch {
+        // ignorar: usuário não autenticado
+      }
+    })();
   }, []);
 
   const handleLoginSuccess = (userData: User) => {
+    // Dados já vieram do endpoint /session/user no componente de Login
     setUser(userData);
     localStorage.setItem('seguroDefeso_user', JSON.stringify(userData));
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await api.post('/session/logout');
+    } catch {
+      // mesmo que falhe, limpe o estado local
+    }
     setUser(null);
     localStorage.removeItem('seguroDefeso_user');
     toast.success('Logout realizado com sucesso');
