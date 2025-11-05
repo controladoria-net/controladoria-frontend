@@ -10,7 +10,6 @@ type UnauthorizedHandler = () => void;
 // API base URL: configurable via Vite env, defaults to production API
 // const API_BASE_URL = (import.meta as any)?.env?.VITE_API_BASE_URL || 'https://api.controladoria.net.br/v1';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-console.log('Using API base URL:', import.meta.env);
 
 // Helper to extract API error messages (API shape: { data, errors: [{ message: string }] })
 export function extractApiErrorMessage(error: unknown): string {
