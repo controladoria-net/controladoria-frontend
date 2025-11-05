@@ -2,7 +2,13 @@ import { useState } from 'react';
 import { Button } from '../ui/button';
 import { Input } from '../ui/input';
 import { Label } from '../ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../ui/card';
 import { Eye, EyeOff, Scale, Loader2 } from 'lucide-react';
 import { toast } from 'sonner@2.0.3';
 import logoImage from 'figma:asset/80fc1f1e9ee50b88e65b40f85f7f2f310a0875da.png';
@@ -20,7 +26,7 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!email || !password) {
       toast.error('Por favor, preencha todos os campos');
       return;
@@ -33,7 +39,9 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
       // Mock: Aceita qualquer email/senha para demonstração
       const mockUser = {
         email,
-        name: email.split('@')[0].charAt(0).toUpperCase() + email.split('@')[0].slice(1),
+        name:
+          email.split('@')[0].charAt(0).toUpperCase() +
+          email.split('@')[0].slice(1),
       };
 
       toast.success(`Bem-vindo, ${mockUser.name}!`);
@@ -47,9 +55,9 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
       <Card className="w-full max-w-md shadow-2xl">
         <CardHeader className="space-y-4 text-center">
           <div className="flex justify-center">
-            <img 
-              src={logoImage} 
-              alt="Logo" 
+            <img
+              src={logoImage}
+              alt="Logo"
               className="h-36 w-auto object-contain dark:brightness-0 dark:invert transition-all"
             />
           </div>
@@ -70,7 +78,7 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
                 type="email"
                 placeholder="seu@email.com"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 disabled={isLoading}
                 autoComplete="email"
               />
@@ -79,14 +87,14 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <Label htmlFor="password">Senha</Label>
-                <button
+                {/* <button
                   type="button"
                   className="text-xs text-cyan-600 dark:text-cyan-400 hover:underline"
                   onClick={onForgotPassword}
                   disabled={isLoading}
                 >
                   Esqueceu a senha?
-                </button>
+                </button> */}
               </div>
               <div className="relative">
                 <Input
@@ -94,7 +102,7 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
                   type={showPassword ? 'text' : 'password'}
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={e => setPassword(e.target.value)}
                   disabled={isLoading}
                   autoComplete="current-password"
                   className="pr-10"
@@ -114,11 +122,7 @@ export function Login({ onLoginSuccess, onForgotPassword }: LoginProps) {
               </div>
             </div>
 
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isLoading}
-            >
+            <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
